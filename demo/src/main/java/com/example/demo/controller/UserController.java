@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.User;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.service.UserService;
 import jakarta.validation.Valid;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -10,15 +12,23 @@ import org.springframework.web.bind.annotation.*;
 
 
 @Controller
-@RequestMapping("/users")
+@RequestMapping("/admin")
 public class UserController {
 
     private final UserService userService;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserService userService) {
+
+    public UserController(
+            UserService userService,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder) {
+
         this.userService = userService;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
     }
-
 
     @GetMapping
     public String getUsers(Model model) {
@@ -39,22 +49,28 @@ public class UserController {
                 "user",
                 new User()
         );
+        model.addAttribute("roles",
+                roleRepository.findAll());
 
         return "edit";
     }
 
     @PostMapping
     public String addUser(
-           @Valid @ModelAttribute("user") User user,
-           BindingResult bindingResult) {
+            @Valid @ModelAttribute("user") User user,
+            BindingResult bindingResult,
+            Model model) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("roles", roleRepository.findAll());
             return "edit";
         }
 
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         userService.save(user);
 
-        return "redirect:/users";
+        return "redirect:/admin";
     }
 
     @GetMapping("/edit/{id}")
@@ -66,6 +82,8 @@ public class UserController {
                 "user",
                 userService.findById(id)
         );
+        model.addAttribute("roles",
+                roleRepository.findAll());
 
         return "edit";
     }
@@ -73,16 +91,31 @@ public class UserController {
     @PostMapping("/update")
     public String updateUser(
             @Valid @ModelAttribute("user") User user,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            @RequestParam(required = false) String newPassword,
+            Model model) {
 
         if (bindingResult.hasErrors()) {
+            model.addAttribute("roles", roleRepository.findAll());
             return "edit";
         }
 
-        userService.update(user);
+        User existingUser = userService.findById(user.getId());
 
-        return "redirect:/users";
-    }
+        existingUser.setName(user.getName());
+        existingUser.setSurname(user.getSurname());
+        existingUser.setEmail(user.getEmail());
+        existingUser.setUsername(user.getUsername());
+        existingUser.setRoles(user.getRoles());
+
+        if (newPassword != null && !newPassword.isBlank()) {
+            existingUser.setPassword(passwordEncoder.encode(newPassword));
+        }
+
+        userService.update(existingUser);
+
+        return "redirect:/admin";
+    }   
 
     @PostMapping("/delete/{id}")
     public String deleteUser(
@@ -90,6 +123,6 @@ public class UserController {
 
         userService.delete(id);
 
-        return "redirect:/users";
+        return "redirect:/admin";
     }
 }

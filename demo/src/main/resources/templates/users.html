@@ -11,7 +11,7 @@
 
 <h1>Users</h1>
 
-<a th:href="@{/users/new}">
+<a th:href="@{/admin/new}">
     Add new user
 </a>
 
@@ -43,13 +43,13 @@
 
         <td>
 
-            <a th:href="@{/users/edit/{id}(id=${user.id})}">
+            <a th:href="@{/admin/edit/{id}(id=${user.id})}">
                 Edit
             </a>
 
             |
 
-            <form th:action="@{/users/delete/{id}(id=${user.id})}"
+            <form th:action="@{/admin/delete/{id}(id=${user.id})}"
                 method="post">
 
                 <button type="submit">
@@ -65,6 +65,10 @@
     </tbody>
 
 </table>
+
+<form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+</form>
 
 </body>
 </html>
