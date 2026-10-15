@@ -25,6 +25,8 @@
         <th>Name</th>
         <th>Surname</th>
         <th>Email</th>
+        <th>Username</th>
+        <th>Role</th>
         <th>Actions</th>
     </tr>
     </thead>
@@ -40,6 +42,15 @@
         <td th:text="${user.surname}"></td>
 
         <td th:text="${user.email}"></td>
+
+        <td th:text="${user.username}"></td>
+
+        <td>
+    <span th:each="role, status : ${user.roles}">
+        <span th:text="${role.name}"></span>
+        <span th:if="${!status.last}">, </span>
+    </span>
+        </td>
 
         <td>
 

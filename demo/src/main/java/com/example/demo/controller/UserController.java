@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.model.User;
 import com.example.demo.repository.RoleRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,16 +18,19 @@ public class UserController {
 
     private final UserService userService;
     private final RoleRepository roleRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
 
     public UserController(
             UserService userService,
             RoleRepository roleRepository,
+            UserRepository userRepository,
             PasswordEncoder passwordEncoder) {
 
         this.userService = userService;
         this.roleRepository = roleRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -66,6 +70,18 @@ public class UserController {
             return "edit";
         }
 
+        if(userRepository.findByUsername(user.getUsername()).isPresent()) {
+            bindingResult.rejectValue(
+                    "username",
+                    "error.user",
+                    "Username alraedy exists"
+            );
+
+            model.addAttribute("roles", roleRepository.findAll());
+            return "edit";
+        }
+
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userService.save(user);
@@ -100,6 +116,22 @@ public class UserController {
             return "edit";
         }
 
+        User userWithSameUsername = userRepository
+                .findByUsername(user.getUsername())
+                .orElse(null);
+
+        if (userWithSameUsername != null
+                && !userWithSameUsername.getId().equals(user.getId())) {
+
+            bindingResult.rejectValue(
+                    "username",
+                    "error.user",
+                    "Username already exists"
+            );
+
+            model.addAttribute("roles", roleRepository.findAll());
+            return "edit";
+        }
         User existingUser = userService.findById(user.getId());
 
         existingUser.setName(user.getName());
